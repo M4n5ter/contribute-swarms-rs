@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use chrono::{DateTime, Local};
 use dashmap::DashMap;
 use erased_serde::Serialize as ErasedSerialize;
@@ -6,7 +8,9 @@ use serde::Serialize;
 use thiserror::Error;
 use uuid::Uuid;
 
-use crate::structs::concurrent_workflow::ConcurrentWorkflowError;
+use crate::structs::{
+    concurrent_workflow::ConcurrentWorkflowError, hierarchical_swarm::HierarchicalSwarmError,
+};
 
 pub trait Swarm {
     fn name(&self) -> &str;
@@ -18,6 +22,8 @@ pub trait Swarm {
 pub enum SwarmError {
     #[error("ConcurrentWorkflowError: {0}")]
     ConcurrentWorkflowError(#[from] ConcurrentWorkflowError),
+    #[error("HierarchicalSwarmError: {0}")]
+    HierarchicalSwarmError(#[from] HierarchicalSwarmError),
 }
 
 #[derive(Clone, Default, Serialize)]
@@ -25,7 +31,14 @@ pub struct MetadataSchemaMap(DashMap<String, MetadataSchema>);
 
 impl MetadataSchemaMap {
     pub fn add(&self, task: impl Into<String>, metadata: MetadataSchema) {
-        self.0.insert(task.into(), metadata);
+        self.insert(task.into(), metadata);
+    }
+}
+
+impl Deref for MetadataSchemaMap {
+    type Target = DashMap<String, MetadataSchema>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }
 

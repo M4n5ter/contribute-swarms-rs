@@ -171,7 +171,7 @@ impl ConcurrentWorkflow {
         persistence::save_to_file(metadata_data, &metadata_output_dir).await?;
 
         // Safety: we know that the task exists
-        Ok(self.conversation.0.get(&task).unwrap().clone())
+        Ok(self.conversation.get(&task).unwrap().clone())
     }
 
     /// Runs the workflow for a batch of tasks, executes agents concurrently for each task.

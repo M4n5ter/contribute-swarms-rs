@@ -222,7 +222,7 @@ where
             .fold(self, |builder, stop_word| builder.add_stop_word(stop_word))
     }
 
-    pub fn disable_task_complete_tool(mut self) -> Self {
+    pub fn disable_task_evaluator_tool(mut self) -> Self {
         self.config.task_evaluator_tool_enabled = false;
         self
     }
@@ -493,7 +493,7 @@ where
                 }
 
                 let mut success = false;
-                // let task_prompt = self.short_memory.0.get(&task).unwrap().to_string(); // Safety: task is in short_memory
+                // let task_prompt = self.short_memory.get(&task).unwrap().to_string(); // Safety: task is in short_memory
                 for attempt in 0..self.config.retry_attempts {
                     if success {
                         break;
@@ -508,7 +508,7 @@ where
                     // }
 
                     // Generate response using LLM
-                    let history = self.short_memory.0.get(&task).unwrap(); // Safety: task is in short_memory
+                    let history = self.short_memory.get(&task).unwrap(); // Safety: task is in short_memory
                     let current_chat_response =
                         match self.chat(&current_prompt, history.deref()).await {
                             Ok(response) => response,
@@ -519,7 +519,7 @@ where
                         };
                     // needed to drop the lock
                     // if use:
-                    // let history = (&(*self.short_memory.0.get(&task).unwrap())).into();
+                    // let history = (&(*self.short_memory.get(&task).unwrap())).into();
                     // we don't need to drop the lock, because the lock is owned by temporary variable
                     drop(history);
 
@@ -654,7 +654,6 @@ where
             // TODO: More flexible output types, e.g. JSON, CSV, etc.
             Ok(self
                 .short_memory
-                .0
                 .get(&task)
                 .expect("Task should exist in short memory")
                 .to_string())
@@ -738,7 +737,7 @@ where
                     .join(format!("{}_{}", self.name(), task_hash))
                     .with_extension("json");
 
-                let json = serde_json::to_string_pretty(&self.short_memory.0.get(&task).unwrap())?; // TODO: Safety?
+                let json = serde_json::to_string_pretty(&self.short_memory.get(&task).unwrap())?; // TODO: Safety?
                 persistence::save_to_file(&json, path).await?;
             }
             Ok(())
@@ -761,7 +760,10 @@ where
     }
 
     fn description(&self) -> String {
-        self.config.description.clone().unwrap_or_default()
+        self.config
+            .description
+            .clone()
+            .unwrap_or(self.system_prompt.clone().unwrap_or_default())
     }
 
     fn clone_box(&self) -> Box<dyn Agent> {

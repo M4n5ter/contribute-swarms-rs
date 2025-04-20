@@ -1,6 +1,7 @@
 use std::{
     collections::{HashMap, VecDeque},
     fmt::Display,
+    ops::Deref,
     path::{Path, PathBuf},
 };
 
@@ -36,7 +37,6 @@ impl AgentShortMemory {
         message: impl Into<String>,
     ) {
         let mut conversation = self
-            .0
             .entry(task.into())
             .or_insert(AgentConversation::new(conversation_owner.into()));
         conversation.add(role, message.into())
@@ -46,6 +46,13 @@ impl AgentShortMemory {
 impl Default for AgentShortMemory {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl Deref for AgentShortMemory {
+    type Target = DashMap<Task, AgentConversation>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }
 
